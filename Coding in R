@@ -1,0 +1,10 @@
+<!doctype html>
+<html>
+  <head>
+    <title>High-Dimensional Statistics Project: Image Classifciation using the SIPaKMeD dataset </title>
+  </head> This code was written in R to analyse the SIPaKMeD dataset for feature and image based classification of 
+normal and pathological cervical cancer cells in Pap smear images.
+  <body>
+    <p>This is an example paragraph. Anything in the <strong>body</strong> tag will appear on the page, just like this <strong>p</strong> tag and its contents.</p>
+  </body>
+</html>
