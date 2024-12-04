@@ -1,0 +1,29 @@
+# Create a vector for the labels corresponding to each category (0-4)
+train.y <- c(
+  rep(0, length(dsy.train)), 
+  rep(1, length(koil.train)), 
+  rep(2, length(para.train)), 
+  rep(3, length(sup.train)),   
+  rep(4, length(met.train))  
+)
+
+#labels 
+test.y <- c(
+  rep(0, length(dsy.test)), 
+  rep(1, length(koil.test)), 
+  rep(2, length(para.test)), 
+  rep(3, length(sup.test)),   
+  rep(4, length(met.test))  
+)
+
+val.y <- c(
+  rep(0, length(dsy.val)), 
+  rep(1, length(koil.val)), 
+  rep(2, length(para.val)), 
+  rep(3, length(sup.val)),   
+  rep(4, length(met.val))  
+)
+
+
+
+
