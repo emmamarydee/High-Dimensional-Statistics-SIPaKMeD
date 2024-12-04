@@ -1,0 +1,71 @@
+library(keras3)
+library(tensorflow)
+library(EBImage)
+library(generics)
+
+dyskeratotic_path <- "/Users/emmamarydee/Downloads/im_Dyskeratotic"
+koilocytotic_path <- "/Users/emmamarydee/Downloads/im_Koilocytotic"
+parabasal_path <- "/Users/emmamarydee/Downloads/im_Parabasal"
+superficial_path <- "/Users/emmamarydee/Downloads/im_Superficial-Intermediate"
+metaplastic_path <- "/Users/emmamarydee/Downloads/im_Metaplastic"
+
+dyskeratotic_files <- list.files(dyskeratotic_path, pattern = "*.jpeg", full.names = TRUE)
+koilocytotic_files <- list.files(koilocytotic_path, pattern = "*.jpeg", full.names = TRUE)
+parabasal_files <- list.files(parabasal_path, pattern = "*.jpeg", full.names = TRUE)
+superficial_files <- list.files(superficial_path, pattern = "*.jpeg", full.names = TRUE)
+metaplastic_files <- list.files(metaplastic_path, pattern = "*.jpeg", full.names = TRUE)
+
+#For efficiency and exploratory results, will use a sample of 220 images
+#68% (150) will be used for training, and 70 (18%) for both testing and validation
+set.seed(2024)
+#Training dataset
+dsy.train <- sample(dyskeratotic_files, size = 30, replace = FALSE)
+koil.train <- sample(koilocytotic_files, size = 30, replace = FALSE)
+para.train <- sample(parabasal_files, size = 30, replace = FALSE)
+sup.train <- sample(superficial_files, size = 30, replace = FALSE)
+met.train <- sample(metaplastic_files, size = 30, replace = FALSE)
+
+training <- c(dsy.train, koil.train, para.train, sup.train, met.train)
+
+#Test dataset
+
+dsy.test <- sample(setdiff(dyskeratotic_files, dsy.train), size = 7, replace = FALSE)
+koil.test <- sample(setdiff(koilocytotic_files, koil.train), size = 7, replace = FALSE)
+para.test <- sample(setdiff(parabasal_files, para.train), size = 7, replace = FALSE)
+sup.test <- sample(setdiff(superficial_files, sup.train), size = 7, replace = FALSE)
+met.test <- sample(setdiff(metaplastic_files, met.train), size = 7, replace = FALSE)
+
+test <- c(dsy.test, koil.test, para.test, sup.test, met.test)
+
+#Validation dataset
+dsy.val <- sample(setdiff(dyskeratotic_files, c(dsy.train, dsy.test)), size = 7, replace = FALSE)
+koil.val <- sample(setdiff(koilocytotic_files, c(koil.train, koil.test)), size = 7, replace = FALSE)
+para.val <- sample(setdiff(parabasal_files, c(para.train, para.test)), size = 7, replace = FALSE)
+sup.val <- sample(setdiff(superficial_files, c(sup.train, sup.test)), size = 7, replace = FALSE)
+met.val <- sample(setdiff(metaplastic_files, c(met.train, met.test)), size = 7, replace = FALSE)
+
+validation <- c(dsy.val, koil.val, para.val, sup.val, met.val)
+
+
+##Reading the image
+mpic <- list()
+for(i in 1:length(training)) {
+  mpic[[i]] <- readImage(training[i])
+}
+
+mpic.val <- list()
+for(i in 1:length(validation)) {
+  mpic.val[[i]] <- readImage(validation[i])
+}
+
+mpic.test <- list()
+for(i in 1:length(test)) {
+  mpic.test[[i]] <- readImage(test[i])
+}
+
+
+
+
+
+
+
