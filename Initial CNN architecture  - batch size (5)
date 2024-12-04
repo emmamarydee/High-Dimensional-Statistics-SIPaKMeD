@@ -1,0 +1,89 @@
+set.seed(4202)
+batch_size <- c(8, 16, 32, 64)
+train_accuracy_bs <- list()
+val_accuracy_bs <- list()
+train_loss_bs <- list()
+val_loss_bs <- list()
+test_accuracy_bs <- list()
+test_loss_bs <- list()
+confusion_matrix_bs <- list()
+confusion_matrix_test_bs <- list()
+model_bs <- list()
+
+for (i in 1:length(batch_size)) {
+  set.seed(4202)
+  # Initialize a new model for each dropout rate
+  model <- keras_model_sequential()
+  
+  # Build the model architecture
+  model %>%
+    layer_random_flip("horizontal", input_shape = c(224, 224, 3)) %>%
+    
+    layer_conv_2d(filters = 16, kernel_size = c(3,3), padding = "same", activation = "relu") %>%
+    layer_max_pooling_2d(pool_size = c(2,2)) %>%
+    
+    layer_conv_2d(filters = 32, kernel_size = c(3,3), padding = "same", activation = "relu") %>%
+    layer_max_pooling_2d(pool_size = c(2,2)) %>%
+    
+    layer_conv_2d(filters = 64, kernel_size = c(3,3), padding = "same", activation = "relu") %>%
+    layer_max_pooling_2d(pool_size = c(2,2)) %>%
+    
+    layer_flatten() %>%
+    
+    layer_dense(units = 512, activation = "sigmoid") %>%
+    
+    layer_dense(units = 128, activation = "sigmoid") %>%
+    
+    layer_dense(units = 5, activation = "softmax", name = "Output") %>%
+    
+    compile(
+      loss = "categorical_crossentropy",
+      optimizer = optimizer_adam(learning_rate = 0.0005),
+      metrics = "accuracy"
+    )
+  
+  # Fit the model
+  model_bs <- model %>% fit(
+    mpic.train.array, trainLabels,
+    batch_size = batch_size[i],
+    epochs = 30,
+    validation_data = list(mpic.val.array, valLabels)
+  )
+  
+  
+  eval_model_bs <- model %>% keras3::evaluate(mpic.test.array, testLabels)
+  
+  # Store the last validation accuracy and test
+  
+  train_accuracy_bs[[i]] <- model_bs$metrics$accuracy
+  val_accuracy_bs[[i]] <- model_bs$metrics$val_accuracy
+  train_loss_bs[[i]] <- model_bs$metrics$loss
+  val_loss_bs[[i]] <- model_bs$metrics$val_loss
+  test_accuracy_bs[[i]] <- eval_model_bs$accuracy
+  test_loss_bs[[i]] <- eval_model_bs$loss
+  model_bs[[i]] <- model
+  
+  pred_train_bs <- model %>% predict(mpic.train.array)
+  pred_classes_bs <- max.col(pred_train_bs) - 1
+  confusion_matrix_bs[[i]] <- table(Predicted = pred_classes_bs, Actual = train.y)
+  
+  pred_test_bs <- model %>% predict(mpic.test.array)
+  pred_classes_test_bs <- max.col(pred_test_bs) - 1
+  confusion_matrix_test_bs[[i]] <- table(Predicted = pred_classes_test_bs, Actual = test.y)
+}
+
+result_table_batch_size <- data.frame(
+  Batch_Size = batch_size,
+  Test_Accuracy = unlist(test_accuracy_bs),
+  Test_Loss = unlist(test_loss_bs)
+)
+
+####save results in latex format
+
+install.packages("xtable")
+library(xtable)
+
+latex_table_batch_size <- xtable()
+
+print(latex_table_batch_size, file = "result_table_batch_size.tex")
+
