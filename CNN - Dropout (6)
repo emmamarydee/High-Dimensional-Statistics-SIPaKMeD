@@ -1,0 +1,202 @@
+
+set.seed(123)
+rate <- c(0.1, 0.2, 0.3, 0.4, 0.5)
+train_accuracy_all <- list()
+val_accuracy_all <- list()
+train_loss_all <- list()
+val_loss_all <- list()
+test_accuracy_all <- list()
+test_loss_all <- list()
+confusion_matrix <- list()
+confusion_matrix_test <- list()
+model_all <- list()
+
+
+set.seed(123)
+rate <- c(0.1, 0.2, 0.3, 0.4, 0.5)
+train_accuracy_all <- list()
+val_accuracy_all <- list()
+train_loss_all <- list()
+val_loss_all <- list()
+test_accuracy_all <- list()
+test_loss_all <- list()
+confusion_matrix <- list()
+confusion_matrix_test <- list()
+model_all <- list()
+
+
+# Loop over different dropout rates
+for (i in 1:length(rate)) {
+  set.seed(123)
+  # Initialize a new model for each dropout rate
+  model <- keras_model_sequential()
+  
+  # Build the model architecture
+  model %>%
+    layer_random_flip("horizontal", input_shape = c(224, 224, 3)) %>%
+    
+    layer_conv_2d(filters = 16, kernel_size = c(3,3), padding = "same", activation = "relu") %>%
+    layer_max_pooling_2d(pool_size = c(2,2)) %>%
+    
+    layer_conv_2d(filters = 32, kernel_size = c(3,3), padding = "same", activation = "relu") %>%
+    layer_max_pooling_2d(pool_size = c(2,2)) %>%
+    
+    layer_conv_2d(filters = 64, kernel_size = c(3,3), padding = "same", activation = "relu") %>%
+    layer_max_pooling_2d(pool_size = c(2,2)) %>%
+    
+    layer_flatten() %>%
+    
+    layer_dense(units = 512, activation = "sigmoid") %>%
+    layer_dropout(rate[i]) %>% 
+    
+    layer_dense(units = 128, activation = "sigmoid") %>%
+    layer_dropout(rate[i]) %>%  
+    
+    layer_dense(units = 5, activation = "softmax", name = "Output") %>%
+    
+    compile(
+      loss = "categorical_crossentropy",
+      optimizer = optimizer_adam(learning_rate = 0.0005),
+      metrics = "accuracy"
+    )
+  
+  # Fit the model
+  model_dropout <- model %>% fit(
+    mpic.train.array, trainLabels,
+    batch_size = 32,
+    epochs = 30,
+    validation_data = list(mpic.val.array, valLabels)
+  )
+  
+
+  eval_model_dropout <- model %>% keras3::evaluate(mpic.test.array, testLabels)
+  
+  # Store the last validation accuracy and test
+  
+  train_accuracy_all[[i]] <- model_dropout$metrics$accuracy
+  val_accuracy_all[[i]] <- model_dropout$metrics$val_accuracy
+  train_loss_all[[i]] <- model_dropout$metrics$loss
+  val_loss_all[[i]] <- model_dropout$metrics$val_loss
+  test_accuracy_all[[i]] <- eval_model_dropout$accuracy
+  test_loss_all[[i]] <- eval_model_dropout$loss
+  model_all[[i]] <- model
+
+  pred_train <- model %>% predict(mpic.train.array)
+  pred_classes <- max.col(pred_train) - 1
+  confusion_matrix[[i]] <- table(Predicted = pred_classes, Actual = train.y)
+  
+  pred_test <- model %>% predict(mpic.test.array)
+  pred_classes_test <- max.col(pred_test) - 1
+  confusion_matrix_test[[i]] <- table(Predicted = pred_classes_test, Actual = test.y)
+}
+
+#Table for rate, training, validation and test loss / accuracy 
+results_table <- data.frame(
+  Dropout_Rate = rate,
+  Test_Accuracy = unlist(test_accuracy_all),
+  Test_Loss = unlist(test_loss_all)
+)
+
+# Create a data frame for the metrics
+metrics_df <- data.frame(
+  Dropout_Rate = rate,
+  Train_Accuracy = unlist(train_accuracy_all),
+  Val_Accuracy = unlist(val_accuracy_all),
+  Train_Loss = unlist(train_loss_all),
+  Val_Loss = unlist(val_loss_all),
+  Test_Accuracy = unlist(test_accuracy_all),
+  Test_Loss = unlist(test_loss_all)
+)
+
+########## training and validation history plot ############
+layout(matrix(c(1,2,3,4,5), nrow = 1, byrow = TRUE), heights = c(1, 1, 1,1,0.4))
+
+# Adjust margins and parameters for plots
+par(mar = c(4, 4, 2, 1), xpd = NA)
+colours <- c("black", "green", "purple", "orange", "red", "blue")
+
+# Define limits for better control
+epochs <- 1:30
+ylim_acc <- range(sapply(train_accuracy_all, range), sapply(val_accuracy_all, range))
+ylim_loss <- range(sapply(train_loss_all, range), sapply(val_loss_all, range))
+
+# Training accuracy plot
+plot(x = epochs, y = train_accuracy_bs.2[[3]], type = "l", col = colours[1], 
+     xlab = "Epochs", ylab = "Accuracy", main = "Training Accuracy", ylim = c(0.0,1.0), cex = 2.5)
+for(i in 1:length(rate)) {
+  lines(x = epochs, y = train_accuracy_all[[i]], col = colours[i+1])
+}
+
+# Validation accuracy plot
+plot(x = epochs, y = val_accuracy_bs.2[[3]], type = "l", col = colours[1], 
+     xlab = "Epochs", ylab = "Accuracy", main = "Validation Accuracy", ylim = c(0.0,1.0), cex = 2.5)
+for(i in 1:length(rate)) {
+  lines(x = epochs, y = val_accuracy_all[[i]], col = colours[i+1])
+}
+
+# Training loss plot
+plot(x = epochs, y = train_loss_bs.2[[3]], type = "l", col = colours[1], 
+     xlab = "Epochs", ylab = "Loss", main = "Training Loss", ylim = c(0.02,2.0), cex = 2.5)
+for(i in 1:length(rate)) {
+  lines(x = epochs, y = train_loss_all[[i]], col = colours[i+1])
+}
+
+# Validation loss plot
+plot(x = epochs, y = val_loss_bs.2[[3]], type = "l", col = colours[1], 
+     xlab = "Epochs", ylab = "Loss", main = "Validation Loss", ylim = c(0.02,2.0), cex = 2.5)
+for(i in 1:length(rate)) {
+  lines(x = epochs, y = val_loss_all[[i]], col = colours[i+1])
+}
+
+###### confusion matrix ########
+par(mar = c(0, 0, 0, 0)) 
+plot.new() 
+legend("center", legend = paste('Dropout rate = ', c(0.0, 0.1, 0.2, 0.3, 0.4, 0.5)), col = colours, 
+       lty = 1, cex = 3, bty = "n")
+
+
+par(mfrow = c(2, 3), mar = c(4, 4, 2, 1), xpd = NA)
+
+colours <- colorRampPalette(c("pink", "red"))(100)
+
+for (i in 1:length(rate)) {
+  
+  cm <- as.matrix(confusion_matrix_test[[i]]) 
+  image(
+    0:(ncol(cm)-1), 0:(nrow(cm)-1), t(cm)[, nrow(cm):1], 
+    col = colours, xlab = "Predicted", ylab = "Actual",
+    main = paste("Dropout Rate =", rate[i])
+  )
+  axis(1, at = 0:(ncol(cm)-1), labels = 0:(ncol(cm)-1), cex.axis = 0.8)
+  axis(2, at = 0:(nrow(cm)-1), labels = rev(0:(nrow(cm)-1)), cex.axis = 0.8)
+  # Add numeric values to cells
+  for (x in 1:ncol(cm)) {
+    for (y in 1:nrow(cm)) {
+      text(x-1, nrow(cm) - y, cm[y, x], col = "black", cex = 1.2)
+    }
+  }
+}
+
+par(mar = c(5,5,4,5))
+colours <- colorRampPalette(c("pink", "red"))(70)
+cm_opt <- as.matrix(confusion_matrix_test[[2]])
+image(0:(ncol(cm)-1), 0:(nrow(cm)-1), t(cm)[, nrow(cm):1],
+      col = colours, xlab = "Predicted", ylab = "Actual",
+      main = paste("Confusion Matrix Dropout Rate = 0.1"),
+      cex.lab = 1.2, cex.axis = 1, cex.main = 1.5
+)
+axis(1, at = 0:(ncol(cm)-1), labels = 0:(ncol(cm)-1), cex.axis = 1)
+axis(2, at = 0:(nrow(cm)-1), labels = rev(0:(nrow(cm)-1)), cex.axis = 1)
+# Add numeric values to cells
+for (x in 1:ncol(cm)) {
+  for (y in 1:nrow(cm)) {
+    text(x-1, nrow(cm) - y, cm[y, x], col = "black", cex = 1.5)
+  }
+}
+
+
+
+
+
+
+
