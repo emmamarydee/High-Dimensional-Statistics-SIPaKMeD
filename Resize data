@@ -1,0 +1,17 @@
+library(jpeg)
+library(purrr)
+library(abind)
+library(OpenImageR)
+
+mpic.train <- map(mpic, ~OpenImageR::resizeImage(., width = 224, height = 224, method = "nearest"))
+mpic.test <- map(mpic.test, ~OpenImageR::resizeImage(., width = 224, height = 224, method = "nearest"))
+mpic.val <- map(mpic.val, ~OpenImageR::resizeImage(., width = 224, height = 224, method = "nearest"))
+
+#Need the data to be in a 4D array 
+mpic.train.array <- abind(mpic.train, along = 0) / 255
+mpic.test.array <- abind(mpic.test, along = 0) / 255
+mpic.val.array <- abind(mpic.val, along = 0) / 255
+
+dim(mpic.train.array)
+dim(mpic.test.array)
+dim(mpic.val.array)
