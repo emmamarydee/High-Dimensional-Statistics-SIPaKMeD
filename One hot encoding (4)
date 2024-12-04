@@ -1,0 +1,11 @@
+#One-hot encoding to get class labels in a data frame to apply CNN model 
+library(keras3)
+set.seed(2024)
+trainLabels <- to_categorical(train.y)
+testLabels <- to_categorical(test.y)
+valLabels <- to_categorical(val.y)
+
+##Check dimensions
+dim(trainLabels)
+dim(testLabels)
+dim(valLabels)
